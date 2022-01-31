@@ -11,7 +11,7 @@ import (
 
 // Init
 type ExchangeSDK interface {
-	GetPrices(coins []string) (map[string]float64, error)
+	GetPrices(currencies []string) (map[string]float64, error)
 }
 
 type pricingImpl struct {
@@ -27,7 +27,7 @@ var (
 	// IMPROVEMENT: can maintain this list as a configuration separated from business logic
 	// IMPROVEMENT: can make conis to be an enums
 	// ASSUMPTION: this list is a price in USD
-	coins = []string{"BTC", "ETH", "LUNA"}
+	currencies = []string{"BTC", "ETH", "LUNA"}
 )
 
 type GetLatestPriceResponse struct {
@@ -35,45 +35,45 @@ type GetLatestPriceResponse struct {
 }
 
 // Business Logic
-// GetLatestPrice is to get the latest price of coins from each SDKs
+// GetLatestPrice is to get the latest price of currencies from each SDKs
 func (p *pricingImpl) GetLatestPrice(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	var priceListByCoin = map[string][]float64{}
+	var priceListByCurrency = map[string][]float64{}
 
 	// get price and then add to the list
 	for _, exchangeSDK := range p.exchangeSDKs {
-		prices, err := exchangeSDK.GetPrices(coins)
+		prices, err := exchangeSDK.GetPrices(currencies)
 		if err != nil {
 			errno.GenErrorResp(w, errno.InternalError, err.Error())
 			return
 		}
-		for _, coin := range coins {
-			priceListByCoin[coin] = append(priceListByCoin[coin], prices[coin])
+		for _, currency := range currencies {
+			priceListByCurrency[currency] = append(priceListByCurrency[currency], prices[currency])
 		}
 	}
 
-	// find median from each coins
+	// find median from each currencies
 	// sort array
-	for _, coin := range coins {
-		sort.Float64s(priceListByCoin[coin])
+	for _, currency := range currencies {
+		sort.Float64s(priceListByCurrency[currency])
 	}
 	// find median
-	var medianPriceByCoin = map[string]string{}
-	for _, coin := range coins {
-		priceLen := len(priceListByCoin[coin])
+	var medianPriceByCurrency = map[string]string{}
+	for _, currency := range currencies {
+		priceLen := len(priceListByCurrency[currency])
 		var price float64
 		if priceLen%2 == 0 {
 			// even, average of the middles
-			price = (priceListByCoin[coin][priceLen/2-1] + priceListByCoin[coin][priceLen/2]) / 2.0
+			price = (priceListByCurrency[currency][priceLen/2-1] + priceListByCurrency[currency][priceLen/2]) / 2.0
 		} else {
 			// odd, use the middle one
-			price = priceListByCoin[coin][priceLen/2]
+			price = priceListByCurrency[currency][priceLen/2]
 		}
-		medianPriceByCoin[coin] = fmt.Sprintf("%f", price)
+		medianPriceByCurrency[currency] = fmt.Sprintf("%f", price)
 	}
 
 	json.NewEncoder(w).Encode(GetLatestPriceResponse{
-		Prices: medianPriceByCoin,
+		Prices: medianPriceByCurrency,
 	})
 }

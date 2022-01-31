@@ -1,7 +1,7 @@
 package binance
 
 // mapper for binance synbols
-var coinMapper = map[string]string{
+var currencyMapper = map[string]string{
 	"BTC":  "BTCUSD",
 	"LUNA": "LUNAUSD",
 	"ETH":  "BTCUSD",
@@ -14,7 +14,7 @@ func NewBinanceSDK() *BinanceSDKImpl {
 	return &BinanceSDKImpl{}
 }
 
-func (b *BinanceSDKImpl) GetPrices(coins []string) (map[string]float64, error) {
+func (b *BinanceSDKImpl) GetPrices(currencies []string) (map[string]float64, error) {
 	return map[string]float64{
 		"BTC":  1,
 		"LUNA": 1,

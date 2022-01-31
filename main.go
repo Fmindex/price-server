@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/Fmindex/price-server/api/server"
+	"github.com/Fmindex/price-server/api"
 )
 
 func main() {
-	server.Run()
+	api.Run()
 }

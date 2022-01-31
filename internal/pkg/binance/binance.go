@@ -4,7 +4,7 @@ package binance
 var coinMapper = map[string]string{
 	"BTC":  "BTCUSD",
 	"LUNA": "LUNAUSD",
-	"USD":  "BTCUSD",
+	"ETH":  "BTCUSD",
 }
 
 // Init
@@ -18,6 +18,6 @@ func (b *BinanceSDKImpl) GetPrices(coins []string) (map[string]float64, error) {
 	return map[string]float64{
 		"BTC":  1,
 		"LUNA": 1,
-		"USD":  1,
+		"ETH":  1,
 	}, nil
 }

@@ -5,8 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"sort"
-
-	errno "github.com/Fmindex/price-server/internal/pkg/error"
+	"sync"
 )
 
 // Init
@@ -28,6 +27,7 @@ var (
 	// IMPROVEMENT: can make conis to be an enums
 	// ASSUMPTION: this list is a price in USD
 	currencies = []string{"BTC", "ETH", "LUNA"}
+	wg         sync.WaitGroup
 )
 
 type GetLatestPriceResponse struct {
@@ -40,14 +40,18 @@ func (p *pricingImpl) GetLatestPrice(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	var priceListByCurrency = map[string][]float64{}
+	var priceByExchange = []map[string]float64{}
 
-	// get price and then add to the list
+	// get price from each exchange sources asynchoronously
+	wg.Add(len(p.exchangeSDKs))
 	for _, exchangeSDK := range p.exchangeSDKs {
-		prices, err := exchangeSDK.GetPrices(currencies)
-		if err != nil {
-			errno.GenErrorResp(w, errno.InternalError, err.Error())
-			return
-		}
+		var pricefromCurrentExchange = map[string]float64{}
+		priceByExchange = append(priceByExchange, pricefromCurrentExchange)
+		go p.getPriceFromExchange(pricefromCurrentExchange, exchangeSDK)
+	}
+	wg.Wait()
+	// merge prices from all exchange sources
+	for _, prices := range priceByExchange {
 		for _, currency := range currencies {
 			priceListByCurrency[currency] = append(priceListByCurrency[currency], prices[currency])
 		}
@@ -73,7 +77,25 @@ func (p *pricingImpl) GetLatestPrice(w http.ResponseWriter, r *http.Request) {
 		medianPriceByCurrency[currency] = fmt.Sprintf("%f", price)
 	}
 
+	// api return
 	json.NewEncoder(w).Encode(GetLatestPriceResponse{
 		Prices: medianPriceByCurrency,
 	})
+}
+
+func (p *pricingImpl) getPriceFromExchange(pricefromCurrentExchange map[string]float64, exchangeSDK ExchangeSDK) {
+	defer wg.Done()
+	prices, err := exchangeSDK.GetPrices(currencies)
+	if err != nil {
+		// IMPROVEMENT: add logs and alarm
+		return
+	}
+	for _, currency := range currencies {
+		priceForCurrency, found := prices[currency]
+		if !found {
+			// IMPROVEMENT: logs error and alarm
+			return
+		}
+		pricefromCurrentExchange[currency] = priceForCurrency
+	}
 }

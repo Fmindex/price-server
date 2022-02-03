@@ -39,6 +39,16 @@ type GetLatestPriceResponse struct {
 func (p *pricingImpl) GetLatestPrice(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
+	// get price
+	medianPriceByCurrency := p.getLatestPriceImpl()
+
+	// api return
+	json.NewEncoder(w).Encode(GetLatestPriceResponse{
+		Prices: medianPriceByCurrency,
+	})
+}
+
+func (p *pricingImpl) getLatestPriceImpl() map[string]string {
 	var priceListByCurrency = map[string][]float64{}
 	var priceByExchange = []map[string]float64{}
 
@@ -53,7 +63,10 @@ func (p *pricingImpl) GetLatestPrice(w http.ResponseWriter, r *http.Request) {
 	// merge prices from all exchange sources
 	for _, prices := range priceByExchange {
 		for _, currency := range currencies {
-			priceListByCurrency[currency] = append(priceListByCurrency[currency], prices[currency])
+			price, found := prices[currency]
+			if found {
+				priceListByCurrency[currency] = append(priceListByCurrency[currency], price)
+			}
 		}
 	}
 
@@ -66,6 +79,12 @@ func (p *pricingImpl) GetLatestPrice(w http.ResponseWriter, r *http.Request) {
 	var medianPriceByCurrency = map[string]string{}
 	for _, currency := range currencies {
 		priceLen := len(priceListByCurrency[currency])
+
+		// no data, skip
+		if priceLen == 0 {
+			continue
+		}
+
 		var price float64
 		if priceLen%2 == 0 {
 			// even, average of the middles
@@ -77,10 +96,7 @@ func (p *pricingImpl) GetLatestPrice(w http.ResponseWriter, r *http.Request) {
 		medianPriceByCurrency[currency] = fmt.Sprintf("%f", price)
 	}
 
-	// api return
-	json.NewEncoder(w).Encode(GetLatestPriceResponse{
-		Prices: medianPriceByCurrency,
-	})
+	return medianPriceByCurrency
 }
 
 func (p *pricingImpl) getPriceFromExchange(pricefromCurrentExchange map[string]float64, exchangeSDK ExchangeSDK) {
@@ -94,7 +110,7 @@ func (p *pricingImpl) getPriceFromExchange(pricefromCurrentExchange map[string]f
 		priceForCurrency, found := prices[currency]
 		if !found {
 			// IMPROVEMENT: logs error and alarm
-			return
+			continue
 		}
 		pricefromCurrentExchange[currency] = priceForCurrency
 	}

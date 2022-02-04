@@ -10,7 +10,7 @@ import (
 
 // Init
 type ExchangeSDK interface {
-	GetPrices(currencies []string) (map[string]float64, error)
+	GetPrices(symbols []string) (map[string]float64, error)
 }
 
 type pricingImpl struct {
@@ -26,8 +26,8 @@ var (
 	// IMPROVEMENT: can maintain this list as a configuration separated from business logic
 	// IMPROVEMENT: can make conis to be an enums
 	// ASSUMPTION: this list is a price in USD
-	currencies = []string{"BTC", "ETH", "LUNA"}
-	wg         sync.WaitGroup
+	symbols = []string{"BTC", "ETH", "LUNA"}
+	wg      sync.WaitGroup
 )
 
 type GetLatestPriceResponse struct {
@@ -35,22 +35,23 @@ type GetLatestPriceResponse struct {
 }
 
 // Business Logic
-// GetLatestPrice is to get the latest price of currencies from each SDKs
+// GetLatestPrice is to get the latest price of symbols from each SDKs
 func (p *pricingImpl) GetLatestPrice(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	// get price
-	medianPriceByCurrency := p.getLatestPriceImpl()
+	medianPriceBySymbol := p.getLatestPriceImpl()
 
 	// api return
+	fmt.Printf("/latest: return %v\n", medianPriceBySymbol)
 	json.NewEncoder(w).Encode(GetLatestPriceResponse{
-		Prices: medianPriceByCurrency,
+		Prices: medianPriceBySymbol,
 	})
 }
 
 func (p *pricingImpl) getLatestPriceImpl() map[string]string {
 
-	var priceListByCurrency = map[string][]float64{}
+	var priceListBySymbol = map[string][]float64{}
 	var priceByExchange = []map[string]float64{}
 
 	// get price from each exchange sources asynchoronously
@@ -64,23 +65,23 @@ func (p *pricingImpl) getLatestPriceImpl() map[string]string {
 
 	// merge prices from all exchange sources
 	for _, prices := range priceByExchange {
-		for _, currency := range currencies {
-			price, found := prices[currency]
+		for _, symbol := range symbols {
+			price, found := prices[symbol]
 			if found {
-				priceListByCurrency[currency] = append(priceListByCurrency[currency], price)
+				priceListBySymbol[symbol] = append(priceListBySymbol[symbol], price)
 			}
 		}
 	}
 
-	// find median from each currencies
+	// find median from each symbols
 	// sort array
-	for _, currency := range currencies {
-		sort.Float64s(priceListByCurrency[currency])
+	for _, symbol := range symbols {
+		sort.Float64s(priceListBySymbol[symbol])
 	}
 	// find median
-	var medianPriceByCurrency = map[string]string{}
-	for _, currency := range currencies {
-		priceLen := len(priceListByCurrency[currency])
+	var medianPriceBySymbol = map[string]string{}
+	for _, symbol := range symbols {
+		priceLen := len(priceListBySymbol[symbol])
 
 		// no data, skip
 		if priceLen == 0 {
@@ -90,30 +91,30 @@ func (p *pricingImpl) getLatestPriceImpl() map[string]string {
 		var price float64
 		if priceLen%2 == 0 {
 			// even, average of the middles
-			price = (priceListByCurrency[currency][priceLen/2-1] + priceListByCurrency[currency][priceLen/2]) / 2.0
+			price = (priceListBySymbol[symbol][priceLen/2-1] + priceListBySymbol[symbol][priceLen/2]) / 2.0
 		} else {
 			// odd, use the middle one
-			price = priceListByCurrency[currency][priceLen/2]
+			price = priceListBySymbol[symbol][priceLen/2]
 		}
-		medianPriceByCurrency[currency] = fmt.Sprintf("%f", price)
+		medianPriceBySymbol[symbol] = fmt.Sprintf("%f", price)
 	}
 
-	return medianPriceByCurrency
+	return medianPriceBySymbol
 }
 
 func (p *pricingImpl) getPriceFromExchange(pricefromCurrentExchange map[string]float64, exchangeSDK ExchangeSDK) {
 	defer wg.Done()
-	prices, err := exchangeSDK.GetPrices(currencies)
+	prices, err := exchangeSDK.GetPrices(symbols)
 	if err != nil {
 		// IMPROVEMENT: add logs and alarm
 		return
 	}
-	for _, currency := range currencies {
-		priceForCurrency, found := prices[currency]
+	for _, symbol := range symbols {
+		priceForSymbol, found := prices[symbol]
 		if !found {
 			// IMPROVEMENT: logs error and alarm
 			continue
 		}
-		pricefromCurrentExchange[currency] = priceForCurrency
+		pricefromCurrentExchange[symbol] = priceForSymbol
 	}
 }

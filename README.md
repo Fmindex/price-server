@@ -17,6 +17,7 @@ An HTTP API sevice exposing API to get a price of configured symbols from each s
 1. Build: `make build`
 2. Run: `make run`
 3. (Alternative) Build and run: `make build_and_run`
+4. Test: `make test`
 
 ### How to add new exchange price source
 

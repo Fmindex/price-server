@@ -36,7 +36,7 @@ func TestPricing(t *testing.T) {
 			exchange1ReturnTestcase: map[string]float64{"LUNA": 2.0},
 			exchange1ErrorTestcase:  nilError,
 			exchange2ReturnTestcase: map[string]float64{},
-			exchange2ErrorTestcase:  errors.New("currency is not supported"),
+			exchange2ErrorTestcase:  errors.New("symbol is not supported"),
 			output:                  map[string]string{"LUNA": "2.000000"},
 		},
 	}
@@ -51,19 +51,19 @@ func TestPricing(t *testing.T) {
 
 		// set SDK1 returns
 		mockedExchangeSDK1.On("GetPrices", mock.Anything).Return(
-			func(currencies []string) map[string]float64 {
+			func(symbols []string) map[string]float64 {
 				return c.exchange1ReturnTestcase
 			},
-			func(currencies []string) error {
+			func(symbols []string) error {
 				return c.exchange1ErrorTestcase
 			})
 
 		// set SDK2 returns
 		mockedExchangeSDK2.On("GetPrices", mock.Anything).Return(
-			func(currencies []string) map[string]float64 {
+			func(symbols []string) map[string]float64 {
 				return c.exchange2ReturnTestcase
 			},
-			func(currencies []string) error {
+			func(symbols []string) error {
 				return c.exchange2ErrorTestcase
 			})
 

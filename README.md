@@ -29,7 +29,7 @@ An HTTP API sevice exposing API to get a price of configured symbols from each s
 
 3. In the `api/server.go`, add logic to init new SDK and inject to pricing service
 
-### How to add new currency
+### How to add new symbol
 
 1. In the `internal/app/pricing.go`, add the new symbols to `symbols`
 2. In each SDK, add new symbols to `symbolMapper`

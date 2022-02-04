@@ -9,13 +9,13 @@ type ExchangeSDK struct {
 	mock.Mock
 }
 
-// GetPrices provides a mock function with given fields: currencies
-func (_m *ExchangeSDK) GetPrices(currencies []string) (map[string]float64, error) {
-	ret := _m.Called(currencies)
+// GetPrices provides a mock function with given fields: symbols
+func (_m *ExchangeSDK) GetPrices(symbols []string) (map[string]float64, error) {
+	ret := _m.Called(symbols)
 
 	var r0 map[string]float64
 	if rf, ok := ret.Get(0).(func([]string) map[string]float64); ok {
-		r0 = rf(currencies)
+		r0 = rf(symbols)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(map[string]float64)
@@ -24,7 +24,7 @@ func (_m *ExchangeSDK) GetPrices(currencies []string) (map[string]float64, error
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func([]string) error); ok {
-		r1 = rf(currencies)
+		r1 = rf(symbols)
 	} else {
 		r1 = ret.Error(1)
 	}

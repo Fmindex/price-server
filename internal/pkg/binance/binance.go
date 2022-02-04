@@ -9,7 +9,7 @@ import (
 )
 
 // mapper for binance synbols
-var currencyMapper = map[string]string{
+var symbolMapper = map[string]string{
 	"BTC":  "BTCUSDT",
 	"LUNA": "LUNAUSDT",
 	"ETH":  "ETHUSDT",
@@ -33,12 +33,12 @@ type Response struct {
 	Price  string `json:"price"`
 }
 
-func (b *BinanceSDKImpl) GetPrices(currencies []string) (map[string]float64, error) {
-	var priceListByCurrency = map[string]float64{}
-	for _, currency := range currencies {
+func (b *BinanceSDKImpl) GetPrices(symbols []string) (map[string]float64, error) {
+	var priceListBySymbol = map[string]float64{}
+	for _, symbol := range symbols {
 
 		// get binance symbol
-		binanceSymbol, found := currencyMapper[currency]
+		binanceSymbol, found := symbolMapper[symbol]
 		if !found {
 			// IMPROVEMENT: add logs
 			continue
@@ -67,8 +67,8 @@ func (b *BinanceSDKImpl) GetPrices(currencies []string) (map[string]float64, err
 		}
 
 		// add price
-		priceListByCurrency[currency] = s
+		priceListBySymbol[symbol] = s
 	}
 
-	return priceListByCurrency, nil
+	return priceListBySymbol, nil
 }

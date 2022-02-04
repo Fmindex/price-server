@@ -9,7 +9,7 @@ import (
 )
 
 // mapper for coingecko synbols
-var currencyMapper = map[string]string{
+var symbolMapper = map[string]string{
 	"BTC":  "bitcoin",
 	"LUNA": "terra-luna",
 	"ETH":  "ethereum",
@@ -24,29 +24,29 @@ func NewCoingeckoSDK() *CoingeckoSDKImpl {
 
 const (
 	coingeckoHost = "https://api.coingecko.com/api/v3/%s"
-	getPricePath  = "simple/price?ids=%s&vs_currencies=%s"
-	vsCurrency    = "usd"
+	getPricePath  = "simple/price?ids=%s&vs_symbols=%s"
+	vsSymbol      = "usd"
 )
 
-func (b *CoingeckoSDKImpl) GetPrices(currencies []string) (map[string]float64, error) {
+func (b *CoingeckoSDKImpl) GetPrices(symbols []string) (map[string]float64, error) {
 
-	var priceListByCurrency = map[string]float64{}
+	var priceListBySymbol = map[string]float64{}
 
-	// get joined of mapped currencies
-	var mappedCurrencies []string
-	for _, currency := range currencies {
+	// get joined of mapped symbols
+	var mappedSymbols []string
+	for _, symbol := range symbols {
 		// get coingecko symbol
-		coingeckoSymbol, found := currencyMapper[currency]
+		coingeckoSymbol, found := symbolMapper[symbol]
 		if !found {
 			// IMPROVEMENT: add logs
 			continue
 		}
 
-		mappedCurrencies = append(mappedCurrencies, coingeckoSymbol)
+		mappedSymbols = append(mappedSymbols, coingeckoSymbol)
 	}
 
 	// get price
-	path := fmt.Sprintf(getPricePath, strings.Join(mappedCurrencies, ","), vsCurrency)
+	path := fmt.Sprintf(getPricePath, strings.Join(mappedSymbols, ","), vsSymbol)
 	response, err := http.Get(fmt.Sprintf(coingeckoHost, path))
 	if err != nil {
 		return nil, err
@@ -61,24 +61,24 @@ func (b *CoingeckoSDKImpl) GetPrices(currencies []string) (map[string]float64, e
 	json.Unmarshal(responseData, &responseObject)
 
 	// build returned price object
-	for _, currency := range currencies {
+	for _, symbol := range symbols {
 		// get coingecko symbol
-		coingeckoSymbol, found := currencyMapper[currency]
+		coingeckoSymbol, found := symbolMapper[symbol]
 		if !found {
 			// IMPROVEMENT: add logs
 			continue
 		}
 
 		// extract price from response
-		f, found := responseObject[coingeckoSymbol][vsCurrency]
+		f, found := responseObject[coingeckoSymbol][vsSymbol]
 		if !found {
 			// IMPROVEMENT: add logs
 			continue
 		}
 
 		// add price
-		priceListByCurrency[currency] = f
+		priceListBySymbol[symbol] = f
 	}
 
-	return priceListByCurrency, nil
+	return priceListBySymbol, nil
 }

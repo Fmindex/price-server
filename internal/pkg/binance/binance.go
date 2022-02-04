@@ -2,7 +2,6 @@ package binance
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -37,10 +36,12 @@ type Response struct {
 func (b *BinanceSDKImpl) GetPrices(currencies []string) (map[string]float64, error) {
 	var priceListByCurrency = map[string]float64{}
 	for _, currency := range currencies {
+
 		// get binance symbol
 		binanceSymbol, found := currencyMapper[currency]
 		if !found {
-			return nil, errors.New("currency is not supported")
+			// IMPROVEMENT: add logs
+			continue
 		}
 
 		// get price
@@ -64,6 +65,8 @@ func (b *BinanceSDKImpl) GetPrices(currencies []string) (map[string]float64, err
 		if err != nil {
 			return nil, err
 		}
+
+		// add price
 		priceListByCurrency[currency] = s
 	}
 

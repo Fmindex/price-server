@@ -2,7 +2,6 @@ package coingecko
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -30,14 +29,17 @@ const (
 )
 
 func (b *CoingeckoSDKImpl) GetPrices(currencies []string) (map[string]float64, error) {
+
 	var priceListByCurrency = map[string]float64{}
+
 	// get joined of mapped currencies
 	var mappedCurrencies []string
 	for _, currency := range currencies {
 		// get coingecko symbol
 		coingeckoSymbol, found := currencyMapper[currency]
 		if !found {
-			return nil, errors.New("currency is not supported")
+			// IMPROVEMENT: add logs
+			continue
 		}
 
 		mappedCurrencies = append(mappedCurrencies, coingeckoSymbol)
@@ -63,13 +65,18 @@ func (b *CoingeckoSDKImpl) GetPrices(currencies []string) (map[string]float64, e
 		// get coingecko symbol
 		coingeckoSymbol, found := currencyMapper[currency]
 		if !found {
-			return nil, errors.New("currency is not supported")
+			// IMPROVEMENT: add logs
+			continue
 		}
 
+		// extract price from response
 		f, found := responseObject[coingeckoSymbol][vsCurrency]
-		if err != nil {
-			return nil, errors.New("currency is not supported by coingecko")
+		if !found {
+			// IMPROVEMENT: add logs
+			continue
 		}
+
+		// add price
 		priceListByCurrency[currency] = f
 	}
 

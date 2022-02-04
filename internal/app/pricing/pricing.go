@@ -49,6 +49,7 @@ func (p *pricingImpl) GetLatestPrice(w http.ResponseWriter, r *http.Request) {
 }
 
 func (p *pricingImpl) getLatestPriceImpl() map[string]string {
+
 	var priceListByCurrency = map[string][]float64{}
 	var priceByExchange = []map[string]float64{}
 
@@ -60,6 +61,7 @@ func (p *pricingImpl) getLatestPriceImpl() map[string]string {
 		go p.getPriceFromExchange(pricefromCurrentExchange, exchangeSDK)
 	}
 	wg.Wait()
+
 	// merge prices from all exchange sources
 	for _, prices := range priceByExchange {
 		for _, currency := range currencies {

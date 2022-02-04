@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/Fmindex/price-server/internal/app/pricing"
@@ -22,5 +23,6 @@ func Run() {
 	http.HandleFunc("/latest", pricingHandler.GetLatestPrice)
 
 	// run http server
+	fmt.Println("Price server is running")
 	http.ListenAndServe(":8888", nil)
 }
